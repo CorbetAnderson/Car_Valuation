@@ -1,4 +1,4 @@
-# src/my_project/collection/dedupe.py
+# src/car_valuation/collection/dedupe.py
 from __future__ import annotations
 
 from dataclasses import dataclass

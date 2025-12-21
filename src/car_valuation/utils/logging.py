@@ -1,4 +1,4 @@
-# src/my_project/utils/logging.py
+# src/car_valuation/utils/logging.py
 from __future__ import annotations
 
 import logging

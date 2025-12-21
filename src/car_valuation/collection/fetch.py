@@ -1,4 +1,4 @@
-# src/my_project/collection/fetch.py
+# src/car_valuation/collection/fetch.py
 from __future__ import annotations
 
 import logging
@@ -88,8 +88,6 @@ def enrich_detail_with_search_fields(
 ) -> Dict[str, Any]:
     """
     Attach selected fields from the search record onto the detail payload.
-
-    By default, adds a nested dict at detail["_search"] to avoid collisions.
     """
     detail = dict(detail)
     detail.update({k: search_rec.get(k) for k in fields})

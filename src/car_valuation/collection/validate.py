@@ -1,4 +1,4 @@
-# src/my_project/collection/validate.py
+# src/car_valuation/collection/validate.py
 from __future__ import annotations
 
 from dataclasses import dataclass

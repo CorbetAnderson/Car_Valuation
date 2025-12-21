@@ -1,6 +1,7 @@
-# src/my_project/storage/queries.py
+# src/car_valuation/storage/queries.py
 from __future__ import annotations
 
+from datetime import datetime
 from dataclasses import dataclass
 from typing import Any, Dict, List, Mapping, Optional, Sequence
 
@@ -70,6 +71,29 @@ def count_rows(sb: Any, table: str) -> int:
         return c
     data = getattr(resp, "data", None) or []
     return len(data)
+
+
+def get_last_scraped(sb: Any, table: str) -> Optional[datetime]:
+    """
+    Return the most recent created_at from `table` (timestamptz).
+    """
+    resp = (
+        sb.client.table(table)
+        .select("created_at")
+        .order("created_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+
+    data = getattr(resp, "data", None) or []
+    if not data:
+        return None
+
+    created_at = data[0].get("created_at")
+    if not created_at:
+        return None
+    
+    return datetime.fromisoformat(created_at.replace("Z", "+00:00"))
 
 
 def fetch_by_listing_id(

@@ -11,6 +11,6 @@ tables:
       enabled: true
       conflict_columns: ["listing_id"]
       ignore_duplicates: false
-      batch_size: 500
+      batch_size: 50
     payload:
       mode: "canonical"

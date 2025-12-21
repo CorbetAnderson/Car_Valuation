@@ -1,4 +1,4 @@
-# src/my_project/collection/normalise.py
+# src/car_valuation/collection/normalise.py
 from __future__ import annotations
 
 import re

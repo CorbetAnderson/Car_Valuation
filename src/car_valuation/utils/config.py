@@ -1,4 +1,4 @@
-# src/my_project/utils/config.py
+# src/car_valuation/utils/config.py
 from __future__ import annotations
 
 import os

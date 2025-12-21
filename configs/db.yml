@@ -1,0 +1,16 @@
+db:
+  provider: "supabase"
+  url_env: "SUPABASE_URL"
+  key_env: "SUPABASE_SERVICE_ROLE_KEY"   # preferred for server-side ingestion
+  schema: "public"
+
+tables:
+  scraped_items:
+    table: "Cars"
+    upsert:
+      enabled: true
+      conflict_columns: ["listing_id"]
+      ignore_duplicates: false
+      batch_size: 500
+    payload:
+      mode: "canonical"

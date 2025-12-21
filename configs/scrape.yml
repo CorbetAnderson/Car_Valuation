@@ -1,0 +1,43 @@
+api:
+  base_url: "https://api.trademe.co.nz"
+  method: "GET"
+  timeout_s: 30
+
+auth:
+  type: "oauth1"
+  consumer_key_env: "API_CONSUMER_KEY"
+  consumer_secret_env: "API_CONSUMER_SECRET"
+  signature_method: "PLAINTEXT"
+
+endpoints:
+  - name: "search"
+    path: "/v1/Search/Motors/Used.json"
+    params:
+      sort_order: 5
+      listed_as: 2
+      listing_type: 2
+    pagination:
+      page_param: "page"
+      page_start: 1
+      page_size_param: "rows"
+      page_size: 500
+    output:
+      record_path: "List"
+
+  - name: "detail"
+    path: "/v1/Listings/{listing_id}.json"
+
+request:
+  headers:
+    Accept: "application/json"
+  params:
+    bypass_cache: true
+    return_canonical: true 
+  rate_limit:
+    max_requests_per_minute: 60
+    jitter_ms: [50, 250]
+
+retries:
+  max_retries: 4
+  backoff_s: 0.8
+

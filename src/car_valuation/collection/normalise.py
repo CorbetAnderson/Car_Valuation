@@ -56,14 +56,17 @@ def photo_list_to_map(
 
 def calc_months_left(expiry_date: str, start_date: str) -> int:
     """
-    expiry_date: 'mmm yyyy' (e.g. 'Aug 2026') or 'Expired'
+    expiry_date: 'mmm yyyy', 'mmmm yyyy', 'This month', or 'Expired'
     start_date:  TradeMe '/Date(ms)/'
 
     Returns:
         Int of number of months left on the WoF or Rego when listed
     """
-    print(expiry_date)
-    if not expiry_date or expiry_date.strip() == "Expired":
+    if not expiry_date:
+        return 0
+
+    expiry = expiry_date.strip()
+    if expiry == "" or expiry.lower() == "expired":
         return 0
 
     # start_date -> datetime (UTC)
@@ -72,11 +75,32 @@ def calc_months_left(expiry_date: str, start_date: str) -> int:
         return 0
     start_dt = datetime.fromtimestamp(int(m.group(1)) / 1000, tz=timezone.utc)
 
-    # expiry_date -> month+year
-    exp_dt = datetime.strptime(expiry_date.strip(), "%b %Y")
+    # Special case: "This month" => months between start_dt and now
+    if expiry.lower() == "this month":
+        now_dt = datetime.now(timezone.utc)
+        months = (now_dt.year - start_dt.year) * 12 + (now_dt.month - start_dt.month)
+        return max(0, months)
 
-    print(start_dt)
-    print(expiry_date)
+    # Normalise month token to 3-letter %b form
+    parts = expiry.split(None, 1)  # split on whitespace once
+    if len(parts) == 2:
+        month_token, rest = parts[0], parts[1]
+        expiry_norm = f"{month_token[:3].title()} {rest.strip()}"
+    else:
+        expiry_norm = expiry
+
+    # expiry_date -> month+year (try a couple of common formats)
+    exp_dt = None
+    for fmt in ("%b %Y", "%B %Y"):
+        try:
+            exp_dt = datetime.strptime(expiry_norm, fmt)
+            break
+        except ValueError:
+            continue
+
+    if exp_dt is None:
+        # Unparseable expiry string; safest fallback
+        return 0
 
     # months difference (whole months)
     months = (exp_dt.year - start_dt.year) * 12 + (exp_dt.month - start_dt.month)

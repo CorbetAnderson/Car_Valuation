@@ -1,0 +1,8 @@
+model:
+  provider: "open_clip"
+  checkpoint: "hf-hub:laion/CLIP-ViT-H-14-laion2B-s32B-b79K"
+inputs:
+  text_field: "description"
+  image_field: "photo_urls"
+output:
+  table_key: "embeddings"

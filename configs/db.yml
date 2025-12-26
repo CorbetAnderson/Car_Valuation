@@ -14,3 +14,12 @@ tables:
       batch_size: 50
     payload:
       mode: "canonical"
+  embeddings:
+    table: "CarEmbeddings"
+    upsert:
+      enabled: true
+      conflict_columns: ["listing_id", "model"]
+      ignore_duplicates: false
+      batch_size: 50
+    payload:
+      mode: "canonical"

@@ -84,7 +84,7 @@ def enrich_detail_with_search_fields(
     detail: Dict[str, Any],
     search_rec: Dict[str, Any],
     *,
-    fields: tuple[str, ...] = ("Make", "Model", "Is4WD", "IsDealer"),
+    fields: tuple[str, ...] = ("Make", "Model", "IsDealer"),
 ) -> Dict[str, Any]:
     """
     Attach selected fields from the search record onto the detail payload.

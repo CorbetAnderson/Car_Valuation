@@ -202,8 +202,6 @@ def canonical_car_keys() -> tuple[str, ...]:
         "is_dealer",
         "make",
         "model",
-        "is_4wd",
-
 
         # vehicle fields
         "body_style",
@@ -308,8 +306,8 @@ def normalize_car_detail(
     # Handle photo URLs
     payload["photo_urls"] = photo_list_to_map(payload["photo_urls"])
 
-    # Handle is_new, is_dealer, is_4wd
-    binary_vars =  ["is_new", "is_dealer", "is_4wd"]
+    # Handle is_new, is_dealer
+    binary_vars =  ["is_new", "is_dealer"]
     payload.update({k: handle_binary(payload[k]) for k in binary_vars})
 
     # Value coercion

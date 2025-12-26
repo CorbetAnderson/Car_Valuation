@@ -15,7 +15,6 @@ endpoints:
     params:
       sort_order: 5
       listed_as: 2
-      listing_type: 1
     pagination:
       page_param: "page"
       page_start: 1

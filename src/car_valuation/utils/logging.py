@@ -35,6 +35,9 @@ def setup_logging(
     root = logging.getLogger()
     root.setLevel(level_value)
 
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
+
     # Prevent duplicated logs if setup_logging() is called more than once
     if not any(isinstance(h, logging.StreamHandler) for h in root.handlers):
         handler = logging.StreamHandler()

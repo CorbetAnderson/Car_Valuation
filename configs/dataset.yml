@@ -1,0 +1,98 @@
+# configs/dataset.yml
+
+dataset:
+  name: "car_valuation"
+  version: "v1"
+  output_dir: "artifacts/datasets"
+
+  # The exact string stored in CarEmbeddings.model
+  embedding_model: "hf-hub:laion/CLIP-ViT-H-14-laion2B-s32B-b79K"
+  require_embeddings: true
+
+  label:
+    source_col: "price"
+    transform: "log1p"   # "none" | "log1p"
+    output_col: "y"
+
+  join:
+    cars_table_key: "scraped_items"     # maps to db.yml tables.scraped_items
+    embeddings_table_key: "embeddings"  # maps to db.yml tables.embeddings
+    embeddings_pick: "latest"           # latest created_at per (listing_id, model)
+
+  filters:
+    drop_if_missing_price: true
+    min_price: 500
+    max_price: 250000
+
+    min_year: 1980
+    max_year_offset: 1        # allow up to (current_year + 1)
+
+    cap_outliers:
+      odometer: [0, 400000]
+      engine_size: [500, 8000]
+
+  features:
+    id_col: "listing_id"
+    time_col: "scraped_at"
+
+    numeric:
+      - year
+      - odometer
+      - engine_size
+      - doors
+      - seats
+      - cylinders
+      - owners
+      - wof_months
+      - reg_months
+
+    categorical:
+      - make
+      - model
+      - body_style
+      - transmission
+      - fuel
+      - region
+
+    embeddings:
+      text_col: "text_embedding"
+      image_col: "image_embedding"
+      combined_col: "clip_embedding"
+      combine_mode: "concat"   # "concat" | "text_only" | "image_only"
+      fill_missing_with_zeros: false
+
+    metadata:
+      - listing_id
+      - scraped_at
+      - region
+      - suburb
+      - is_dealer
+      - is_new
+      - image_url_used
+      - embedded_at
+
+  preprocessing:
+    add_missingness_flags:
+      - odometer
+      - engine_size
+
+    numeric_impute: "median"    # "median" | "mean" | "constant"
+    numeric_scale: "standard"   # "standard" | "none"
+
+    categorical_fill: "UNKNOWN"
+    categorical_encoding: "ordinal"   # start with "ordinal"; add "onehot" later
+
+  split:
+    type: "time"        # "time" | "random" | "group"
+    time_col: "scraped_at"
+    group_col: null     # e.g. "make_model" if you create it
+    train_frac: 0.8
+    val_frac: 0.1
+    test_frac: 0.1
+    seed: 42
+
+  export:
+    format: "parquet"
+    include_raw_text: false      # keep descriptions out of artifacts if you want
+    write_stats: true
+    stats_top_k_categories: 20

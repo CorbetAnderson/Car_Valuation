@@ -1,0 +1,159 @@
+{
+  "spec": {
+    "name": "car_valuation",
+    "version": "v1",
+    "source_tables": {
+      "cars": "Cars",
+      "embeddings": "CarEmbeddings"
+    },
+    "embedding_model": "hf-hub:laion/CLIP-ViT-H-14-laion2B-s32B-b79K",
+    "feature_spec": {
+      "target_col": "price",
+      "id_col": "listing_id",
+      "time_col": "scraped_at",
+      "numeric_cols": [
+        "year",
+        "odometer",
+        "engine_size",
+        "doors",
+        "seats",
+        "cylinders",
+        "owners",
+        "wof_months",
+        "reg_months"
+      ],
+      "categorical_cols": [
+        "make",
+        "model",
+        "body_style",
+        "transmission",
+        "fuel",
+        "region"
+      ],
+      "embedding_text_col": "text_embedding",
+      "embedding_image_col": "image_embedding",
+      "raw_required_cols": [
+        "was_price"
+      ],
+      "engineered_required_cols": [
+        "is_discounted"
+      ],
+      "metadata_cols": [
+        "listing_id",
+        "scraped_at",
+        "region",
+        "image_url_used",
+        "embedded_at"
+      ]
+    },
+    "label_transform": "log1p",
+    "require_embeddings": true
+  },
+  "config": {
+    "name": "car_valuation",
+    "version": "v1",
+    "output_dir": "artifacts/datasets",
+    "embedding_model": "hf-hub:laion/CLIP-ViT-H-14-laion2B-s32B-b79K",
+    "require_embeddings": true,
+    "cars_table": "Cars",
+    "embeddings_table": "CarEmbeddings",
+    "label": {
+      "source_col": "price",
+      "transform": "log1p",
+      "output_col": "y"
+    },
+    "join": {
+      "cars_table_key": "scraped_items",
+      "embeddings_table_key": "embeddings",
+      "embeddings_pick": "latest"
+    },
+    "filters": {
+      "drop_if_missing_price": true,
+      "min_price": 500,
+      "max_price": 250000,
+      "min_year": 1980,
+      "max_year_offset": 1,
+      "max_doors": 5,
+      "max_seats": 12,
+      "max_owners": 10,
+      "current_year": 2026,
+      "longest_wof": 36,
+      "longest_rego": 12,
+      "cap_outliers": {
+        "odometer": [
+          0,
+          400000
+        ],
+        "engine_size": [
+          0,
+          8000
+        ]
+      }
+    },
+    "features": {
+      "id_col": "listing_id",
+      "time_col": "scraped_at",
+      "numeric": [
+        "year",
+        "odometer",
+        "engine_size",
+        "doors",
+        "seats",
+        "cylinders",
+        "owners",
+        "wof_months",
+        "reg_months"
+      ],
+      "categorical": [
+        "make",
+        "model",
+        "body_style",
+        "transmission",
+        "fuel",
+        "region"
+      ],
+      "extra_cols": [
+        "suburb",
+        "is_dealer",
+        "is_new"
+      ],
+      "embeddings": {
+        "id_col": "listing_id",
+        "text_col": "text_embedding",
+        "image_col": "image_embedding",
+        "combine_mode": "concat",
+        "fill_missing_with_zeros": false
+      },
+      "metadata": [
+        "listing_id",
+        "scraped_at",
+        "region",
+        "image_url_used",
+        "embedded_at"
+      ]
+    },
+    "preprocessing": {
+      "add_missingness_flags": [
+        "odometer",
+        "engine_size"
+      ],
+      "numeric_impute": "median",
+      "numeric_scale": "standard",
+      "categorical_fill": "UNKNOWN",
+      "categorical_encoding": "onehot"
+    },
+    "split": {
+      "split_type": "random",
+      "train_frac": 0.8,
+      "val_frac": 0.1,
+      "test_frac": 0.1,
+      "seed": 42
+    },
+    "export": {
+      "format": "parquet",
+      "include_raw_text": false,
+      "write_stats": true,
+      "stats_top_k_categories": 20
+    }
+  }
+}

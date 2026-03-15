@@ -27,9 +27,18 @@ dataset:
     min_year: 1980
     max_year_offset: 1        # allow up to (current_year + 1)
 
+    max_doors: 5
+    max_seats: 12
+    max_owners: 10
+
+    current_year: 2026
+
+    longest_wof: 36
+    longest_rego: 12
+
     cap_outliers:
       odometer: [0, 400000]
-      engine_size: [500, 8000]
+      engine_size: [0, 8000]
 
   features:
     id_col: "listing_id"
@@ -54,10 +63,15 @@ dataset:
       - fuel
       - region
 
+    extra_cols:
+      - suburb
+      - is_dealer
+      - is_new
+
     embeddings:
+      id_col: "listing_id"
       text_col: "text_embedding"
       image_col: "image_embedding"
-      combined_col: "clip_embedding"
       combine_mode: "concat"   # "concat" | "text_only" | "image_only"
       fill_missing_with_zeros: false
 
@@ -65,9 +79,6 @@ dataset:
       - listing_id
       - scraped_at
       - region
-      - suburb
-      - is_dealer
-      - is_new
       - image_url_used
       - embedded_at
 
@@ -80,12 +91,10 @@ dataset:
     numeric_scale: "standard"   # "standard" | "none"
 
     categorical_fill: "UNKNOWN"
-    categorical_encoding: "ordinal"   # start with "ordinal"; add "onehot" later
+    categorical_encoding: "onehot"   # start with "ordinal"; add "onehot" later
 
   split:
-    type: "time"        # "time" | "random" | "group"
-    time_col: "scraped_at"
-    group_col: null     # e.g. "make_model" if you create it
+    split_type: "random"        # "random" | "holdout"
     train_frac: 0.8
     val_frac: 0.1
     test_frac: 0.1

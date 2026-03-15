@@ -16,6 +16,7 @@ dependencies = [
   "pandas",
   "pyarrow",
   "torch",
+  "scikit-learn",
 ]
 
 [project.optional-dependencies]

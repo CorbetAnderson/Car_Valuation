@@ -93,7 +93,7 @@ class CarPriceDataset(Dataset):
         split: str,
         numeric_cols: Sequence[str],
         categorical_cols: Sequence[str],
-        embedding_col: Optional[str],
+        embedding_cols: Optional[Sequence[str]],
         target_col: str = "y",
     ) -> None:
         """
@@ -103,7 +103,7 @@ class CarPriceDataset(Dataset):
             split: "train" | "val" | "test"
             numeric_cols: numeric feature column names.
             categorical_cols: categorical feature column names (if ordinal encoded, these are *_id).
-            embedding_col: column containing the combined embedding vector, if used.
+            embedding_cols: embedding column names to concatenate into x_emb (e.g. text + image).
             target_col: label column to predict (e.g., "y").
         """
         if split not in splits:
@@ -115,12 +115,13 @@ class CarPriceDataset(Dataset):
 
         self.numeric_cols = list(numeric_cols)
         self.categorical_cols = list(categorical_cols)
-        self.embedding_col = embedding_col
+        self.embedding_cols = list(embedding_cols) if embedding_cols else []
         self.target_col = target_col
 
         # Filter to columns that actually exist
         self.numeric_cols = [c for c in self.numeric_cols if c in self.df.columns]
         self.categorical_cols = [c for c in self.categorical_cols if c in self.df.columns]
+        self.embedding_cols = [c for c in self.embedding_cols if c in self.df.columns]
 
         # Pre-convert to numpy for faster access
         if self.numeric_cols:
@@ -133,20 +134,22 @@ class CarPriceDataset(Dataset):
         else:
             self.x_cat = np.zeros((len(self.df), 0), dtype=np.float32)
 
-        if self.embedding_col and self.embedding_col in self.df.columns:
-            # Embeddings are stored as strings/lists - parse them
-            emb_data = self.df[self.embedding_col].tolist()
+        self.x_embs: Dict[str, np.ndarray] = {}
+        for col in self.embedding_cols:
+            emb_data = self.df[col].tolist()
             if emb_data and isinstance(emb_data[0], str):
                 emb_data = [json.loads(e) if e else [] for e in emb_data]
-            self.x_emb = np.array(emb_data, dtype=np.float32)
-        else:
-            self.x_emb = None
+            self.x_embs[col] = np.stack(emb_data).astype(np.float32)
 
         self.y = self.df[self.target_col].values.astype(np.float32)
 
+        # Free the filtered DataFrame — numpy arrays are all we need
+        self._n = len(self.df)
+        del self.df
+
     def __len__(self) -> int:
         """Return number of rows in the selected split."""
-        return len(self.df)
+        return self._n
 
     def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
         """
@@ -164,8 +167,8 @@ class CarPriceDataset(Dataset):
             "y": torch.tensor([self.y[idx]], dtype=torch.float32),
         }
 
-        if self.x_emb is not None:
-            result["x_emb"] = torch.from_numpy(self.x_emb[idx])
+        for col, arr in self.x_embs.items():
+            result[f"x_{col}"] = torch.from_numpy(arr[idx])
 
         return result
 
@@ -189,7 +192,7 @@ def get_dataloaders(
     artifact_dir: str,
     numeric_cols: Sequence[str],
     categorical_cols: Sequence[str],
-    embedding_col: Optional[str],
+    embedding_cols: Optional[Sequence[str]] = None,
     target_col: str = "y",
     batch_size: int = 256,
     num_workers: int = 0,
@@ -205,14 +208,15 @@ def get_dataloaders(
     splits = load_splits(paths.splits_path)
 
     train_ds = CarPriceDataset(
-        df, splits, "train", numeric_cols, categorical_cols, embedding_col, target_col
+        df, splits, "train", numeric_cols, categorical_cols, embedding_cols, target_col
     )
     val_ds = CarPriceDataset(
-        df, splits, "val", numeric_cols, categorical_cols, embedding_col, target_col
+        df, splits, "val", numeric_cols, categorical_cols, embedding_cols, target_col
     )
     test_ds = CarPriceDataset(
-        df, splits, "test", numeric_cols, categorical_cols, embedding_col, target_col
+        df, splits, "test", numeric_cols, categorical_cols, embedding_cols, target_col
     )
+    del df  # Free the full DataFrame — each dataset has its own numpy arrays
 
     train_loader = DataLoader(
         train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers

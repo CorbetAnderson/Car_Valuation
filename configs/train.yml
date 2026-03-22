@@ -1,0 +1,66 @@
+# configs/train.yml
+
+train:
+  dataset:
+    artifact_dir: "artifacts/datasets/v1"
+
+    # Numeric features (post-preprocessing: imputed, scaled)
+    # Includes missingness flags and binary cols from extra_cols
+    numeric_cols:
+      - year
+      - odometer
+      - engine_size
+      - doors
+      - seats
+      - cylinders
+      - owners
+      - wof_months
+      - reg_months
+      - odometer_missing        # added by preprocessing.add_missingness_flags
+      - engine_size_missing
+      - is_dealer
+      - is_new
+
+    # Categorical features (post feature_engineering)
+    # make+model → make_model, suburb+region → location
+    # With categorical_encoding: onehot these expand into 0/1 cols in the parquet
+    categorical_cols:
+      - make_model
+      - body_style
+      - transmission
+      - fuel
+      - location
+
+    # Set to false to train without embeddings
+    use_embeddings: false
+
+    # Both embedding cols — concatenated into x_emb at load time (2048-dim: 1024 text + 1024 image)
+    embedding_cols:
+      - text_embedding
+      - image_embedding
+
+    target_col: "y"
+
+  dataloader:
+    batch_size: 256
+    num_workers: 4
+
+  model:
+    type: "mlp"
+    hidden_dims: [512, 256, 128]
+    dropout: 0.2
+    activation: "relu"
+
+  training:
+    epochs: 1000
+    learning_rate: 0.001
+    optimizer: "adamw"
+    weight_decay: 1.0e-4
+    scheduler: "cosine"
+    early_stopping:
+      patience: 20
+      monitor: "val_loss"
+
+  output:
+    runs_dir: "artifacts/runs"
+    save_best_only: true

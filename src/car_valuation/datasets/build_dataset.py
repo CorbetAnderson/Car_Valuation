@@ -2,6 +2,7 @@
 from __future__ import annotations
 import pandas as pd
 import math
+import time
 
 from dataclasses import dataclass
 from typing import Any, Dict, Mapping, Optional, Sequence
@@ -134,23 +135,40 @@ def fetch_joined_rows(sb: Any, cfg: BuildDatasetConfig, limit: int) -> Any:
     select_str = ", ".join(cols) + f", {cfg.embeddings_table}!inner(" + ", ".join(embed_cols) + ")"
 
     _PAGE = 500
+    _MAX_RETRIES = 3
+    id_col = cfg.features["id_col"]
     all_data: list = []
-    offset = 0
+    last_id = 0
+    page_num = 0
 
     while True:
-        end = offset + _PAGE - 1
-        resp = (
-            sb.client.table(cfg.cars_table)
-            .select(select_str)
-            .eq(f"{cfg.embeddings_table}.model", cfg.embedding_model)
-            .range(offset, end)
-            .execute()
-        )
+        for attempt in range(_MAX_RETRIES):
+            try:
+                resp = (
+                    sb.client.table(cfg.cars_table)
+                    .select(select_str)
+                    .eq(f"{cfg.embeddings_table}.model", cfg.embedding_model)
+                    .gt(id_col, last_id)
+                    .order(id_col)
+                    .limit(_PAGE)
+                    .execute()
+                )
+                break
+            except Exception as e:
+                if attempt < _MAX_RETRIES - 1:
+                    wait = 2 ** (attempt + 1)
+                    print(f"  Page {page_num + 1} failed ({e}), retrying in {wait}s...")
+                    time.sleep(wait)
+                else:
+                    raise
         page = getattr(resp, "data", None) or []
         all_data.extend(page)
+        page_num += 1
+        print(f"  Fetched page {page_num} ({len(all_data)} rows so far)")
         if len(page) < _PAGE or len(all_data) >= limit:
             break
-        offset += _PAGE
+        last_id = page[-1][id_col]
+        time.sleep(0.5)
 
     df = pd.DataFrame(all_data[:limit])
 
@@ -191,24 +209,41 @@ def fetch_joined_rows_make(sb: Any, cfg: BuildDatasetConfig, limit: int, make: s
     select_str = ", ".join(cols) + f", {cfg.embeddings_table}!inner(" + ", ".join(embed_cols) + ")"
 
     _PAGE = 500
+    _MAX_RETRIES = 3
+    id_col = cfg.features["id_col"]
     all_data: list = []
-    offset = 0
+    last_id = 0
+    page_num = 0
 
     while True:
-        end = offset + _PAGE - 1
-        resp = (
-            sb.client.table(cfg.cars_table)
-            .select(select_str)
-            .eq("make", make)
-            .eq(f"{cfg.embeddings_table}.model", cfg.embedding_model)
-            .range(offset, end)
-            .execute()
-        )
+        for attempt in range(_MAX_RETRIES):
+            try:
+                resp = (
+                    sb.client.table(cfg.cars_table)
+                    .select(select_str)
+                    .eq("make", make)
+                    .eq(f"{cfg.embeddings_table}.model", cfg.embedding_model)
+                    .gt(id_col, last_id)
+                    .order(id_col)
+                    .limit(_PAGE)
+                    .execute()
+                )
+                break
+            except Exception as e:
+                if attempt < _MAX_RETRIES - 1:
+                    wait = 2 ** (attempt + 1)
+                    print(f"  Page {page_num + 1} failed ({e}), retrying in {wait}s...")
+                    time.sleep(wait)
+                else:
+                    raise
         page = getattr(resp, "data", None) or []
         all_data.extend(page)
+        page_num += 1
+        print(f"  Fetched page {page_num} ({len(all_data)} rows so far)")
         if len(page) < _PAGE or len(all_data) >= limit:
             break
-        offset += _PAGE
+        last_id = page[-1][id_col]
+        time.sleep(0.5)
 
     df = pd.DataFrame(all_data[:limit])
 
